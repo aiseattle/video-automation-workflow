@@ -1,0 +1,49 @@
+name: 视频自动化工作流
+
+on:
+  schedule:
+    - cron: '0 9 * * *'  # 每天上午9点执行
+  workflow_dispatch:     # 允许手动触发
+
+jobs:
+  video-automation:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v3
+      
+    - name: 设置Python环境
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        
+    - name: 安装依赖
+      run: |
+        pip install openai
+        pip install moviepy
+        pip install requests
+        pip install google-auth google-auth-oauthlib google-auth-httplib2
+        pip install google-api-python-client
+        
+    - name: 生成视频脚本
+      run: python generate_script.py
+      env:
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        
+    - name: 创建视频
+      run: python create_video.py
+      
+    - name: 上传到YouTube
+      run: python upload_youtube.py
+      env:
+        YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+        YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+        YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+        YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+        
+    - name: 上传工件
+      uses: actions/upload-artifact@v3
+      with:
+        name: generated-videos
+        path: output/
